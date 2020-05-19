@@ -1,2 +1,2 @@
 # QuadraSkill
-A multiplayer game for quadratic equations
+A multiplayer game for quadratic equations.
