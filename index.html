@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>QuadraSkill</title>
+    <!-- Add this to <head> -->
+
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+    <!-- Load polyfills to support older browsers -->
+    <script src="//polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver"
+        crossorigin="anonymous"></script>
+
+    <!-- Load Vue followed by BootstrapVue -->
+    <script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+
+    <!-- Load the following for BootstrapVueIcons support -->
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+</head>
+
+<body>
+    <b-container class="mt-1" id="app">
+        <b-row>
+            <b-col>
+                <b-navbar toggleable type="dark" variant="dark">
+                    <b-navbar-brand href="#">
+                        <b-icon icon="alt" font-scale="1"></b-icon> QuadraSkill
+                    </b-navbar-brand>
+                </b-navbar>
+            </b-col>
+        </b-row>
+        <b-row v-show="!isInGame">
+            <b-col class="mt-3">
+                <b-alert :show="isSearching" class="text-center">
+                    <b-icon icon="search" animation="fade" font-scale="1"></b-icon> VAM Searching for players
+                </b-alert>
+                <b-input-group prepend="Username" class="mt-3">
+                    <b-form-input :disabled="isSearching" v-model="ime"></b-form-input>
+                    <b-input-group-append>
+                        <b-button variant="outline-success" :disabled="isSearching" v-on:click="vam()">Find
+                        </b-button>
+                    </b-input-group-append>
+                </b-input-group>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col cols="3">
+                <b-col cols="12" v-show="isInGame" class="mt-3">
+                    <b-list-group>
+                        <b-list-group-item v-for="player in players" :active="player.name == ime">{{player.name}}
+                        </b-list-group-item>
+                    </b-list-group>
+                </b-col>
+            </b-col>
+            <b-col cols="9">
+                <b-row class="mt-3">
+                    <b-col cols="12" v-show="isInGame" class="mt-3">
+                        <b-alert show class="text-center">
+                            <b-icon icon="controller" animation="fade" font-scale="1"></b-icon> In Game with
+                            {{(players) ? players.length : 0}} people
+                        </b-alert>
+                        <b-alert show class="text-center">
+                            <b-icon icon="alt" animation="throb" font-scale="1"></b-icon>
+                            {{(currGame) ? currGame.a : ''}}x^2
+                            {{(currGame) ? ((currGame.b >= 0) ? "+" + currGame.b : currGame.b) : ''}}x
+                            {{(currGame) ? ((currGame.c >= 0) ? "+" + currGame.c : currGame.c) : ''}}
+                            = 0
+                        </b-alert>
+                    </b-col>
+                </b-row>
+                <b-row v-show="isInGame">
+                    <b-col>
+                        <b-input-group prepend="D" class="mt-3">
+                            <b-form-input v-model="d"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                    <b-col>
+                        <b-input-group prepend="x1" class="mt-3">
+                            <b-form-input v-model="x1"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                    <b-col>
+                        <b-input-group prepend="x2" class="mt-3">
+                            <b-form-input v-model="x2"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                </b-row>
+                <b-row v-show="isInGame" class="justify-content-center mt-5">
+                    <b-col class="d-flex justify-content-center">
+                        <b-button variant="primary" v-on:click="ready()">Submit</b-button>
+                    </b-col>
+                </b-row>
+            </b-col>
+        </b-row>
+    </b-container>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                ime: null,
+                socket: null,
+                isSearching: false,
+                d: null,
+                x1: null,
+                x2: null,
+                currGame: null,
+                players: null,
+                isInGame: false,
+            },
+            methods: {
+                vam: function (params) {
+                    this.isSearching = true;
+                    this.socket.emit('vam', this.ime);
+                }, ready: function (params) {
+                    this.socket.emit('ans', { "d": app.d, "x1": app.x1, "x2": app.x2 });
+                }
+            }, mounted() {
+            this.socket = io();
+            this.socket.on('vam', function (msg) {
+                if (((msg) ? ((msg.msg) ? msg.msg == "found" : false) : false) && app.isSearching) {
+                    app.isSearching = false;
+                    app.isInGame = true;
+                    app.currGame = msg.currGame;
+                    app.players = msg.lookingForGame;
+                    console.log("start game");
+                }
+                else if (msg == "stop") {
+                    app.isInGame = false;
+                    console.log("stop");
+                } else if (msg) {
+                    app.currGame = msg;
+                }
+            });
+            this.socket.on('ans', function (per) {
+                this.isInGame = false;
+                console.log(`Game has ended! ${per} has found the answer`);
+                app.$bvToast.toast(`Game has ended! ${per} found the answer`, {
+                    title: `Warning`,
+                    variant: 'success',
+                    solid: true
+                })
+            });
+            this.socket.on('error', function (per) {
+                console.log(`Not right`);
+                app.$bvToast.toast(`This isn't the right answer`, {
+                    title: `Warning`,
+                    variant: 'danger',
+                    solid: true
+                })
+            });
+            this.socket.on('left', function (per) {
+                console.log(`${per} left`);
+                app.players = app.players.filter(player => player.name != per);
+                app.$bvToast.toast(`${per} left`, {
+                    title: `Warning`,
+                    variant: 'danger',
+                    solid: true
+                })
+            });
+            this.socket.on('join', function (per) {
+                console.log(`${per.name} joined`);
+                if (per.name == app.ime) {
+                    app.isInGame = true;
+                    app.isSearching = false;
+                    app.players = per.lookingForGame
+                } else {
+                    app.$bvToast.toast(`${per.name} joined`, {
+                        title: `Warning`,
+                        variant: 'success',
+                        solid: true
+                    })
+                    app.players.push(per);
+                }
+            });
+        },
+        })
+    </script>
+</body>
+
+</html>
