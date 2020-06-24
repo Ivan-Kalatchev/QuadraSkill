@@ -77,7 +77,7 @@ io.on('connection', (socket) => {
             }
             console.log(quest);
             globalQuest = quest;
-            currGame = {"a": quest.a, "b": quest.b, "c": globalQuest.c};
+            currGame = { "a": quest.a, "b": quest.b, "c": globalQuest.c };
             isInGame = true;
             io.emit('vam', {
                 msg: "found",
@@ -85,7 +85,7 @@ io.on('connection', (socket) => {
                 lookingForGame
             });
         } else if (isInGame) {
-            io.emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame});
+            io.emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame });
             io.emit("vam", currGame);
         }
         //io.emit('chat message', msg);
@@ -93,15 +93,18 @@ io.on('connection', (socket) => {
     socket.on('ans', (ans) => {
         //var discr = (b * b) - 4 * (a * c);
         //var sqrDiscr = Math.sqrt(discr);
-        if (ans.d == globalQuest.d && ans.x1 == globalQuest.x1 && ans.x2 == globalQuest.x2 && lookingForGame.length > 1) {
-            io.emit('ans', lookingForGame.filter(user => user.id == socket.client.id)[0].name);
-            io.emit('vam', "stop");
-            globalQuest = null;
-            isInGame = false;
-            lookingForGame = [];
-        } else {
-            io.to(socket.client.id).emit('error', "NO")
+        if (ans) {
+            if (ans.d == globalQuest.d && ans.x1 == globalQuest.x1 && ans.x2 == globalQuest.x2 && lookingForGame.length > 1) {
+                io.emit('ans', lookingForGame.filter(user => user.id == socket.client.id)[0].name);
+                io.emit('vam', "stop");
+                globalQuest = null;
+                isInGame = false;
+                lookingForGame = [];
+            } else {
+                io.to(socket.client.id).emit('error', "NO")
+            }
         }
+
         //io.emit('chat message', msg);
     });
 });
