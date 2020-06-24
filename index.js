@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
     socket.on('ans', (ans) => {
         //var discr = (b * b) - 4 * (a * c);
         //var sqrDiscr = Math.sqrt(discr);
-        if (ans) {
+        if (ans && globalQuest) {
             if (ans.d == globalQuest.d && ans.x1 == globalQuest.x1 && ans.x2 == globalQuest.x2 && lookingForGame.length > 1) {
                 io.emit('ans', lookingForGame.filter(user => user.id == socket.client.id)[0].name);
                 io.emit('vam', "stop");
