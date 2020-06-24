@@ -34,7 +34,7 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('connected');
     socket.on('disconnect', () => {
         console.log('user disconnected');
-        if (isInGame) {
+        if (isInGame && lookingForGame.filter(user => user.id == socket.client.id)[0]) {
             io.emit("left", `${lookingForGame.filter(user => user.id == socket.client.id)[0].name}`);
             lookingForGame = lookingForGame.filter(user => user.id != socket.client.id);
             if (lookingForGame.length < 2) {
