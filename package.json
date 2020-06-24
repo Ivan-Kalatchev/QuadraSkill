@@ -1,11 +1,13 @@
 {
-    "name": "socket-chat-example",
+    "name": "qudraskill",
     "version": "0.0.1",
-    "description": "my first socket.io app",
+    "description": "qudraskill",
     "dependencies": {
         "express": "^4.15.2",
         "lodash": "^4.17.15",
         "random-js": "^2.1.0",
         "socket.io": "^2.3.0"
+    }, "scripts": {
+        "start" : "node index.js"
     }
 }
