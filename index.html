@@ -116,7 +116,15 @@
             methods: {
                 vam: function (params) {
                     this.isSearching = true;
-                    this.socket.emit('vam', this.ime);
+                    if (this.ime != null || this.ime != ''){
+                        this.socket.emit('vam', this.ime);
+                    }else {
+                        app.$bvToast.toast(`Please write your username to start matchmaking`, {
+                            title: `Warning`,
+                            variant: 'danger',
+                            solid: true
+                        })
+                    }
                 }, ready: function (params) {
                     this.socket.emit('ans', { "d": app.d, "x1": app.x1, "x2": app.x2 });
                 }
