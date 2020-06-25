@@ -111,6 +111,18 @@ io.on('connection', (socket) => {
 
         //io.emit('chat message', msg);
     });
+
+    socket.on('chat', (chat) => {
+        //var discr = (b * b) - 4 * (a * c);
+        //var sqrDiscr = Math.sqrt(discr);
+        if (isInGame) {
+            lookingForGame.forEach(element => {
+                io.to(element.id).emit('chat', { sender: lookingForGame.filter(user => user.id == socket.client.id)[0].name, mes: chat});
+            });
+        }
+
+        //io.emit('chat message', msg);
+    });
 });
 
 http.listen(process.env.PORT || 3000, () => {

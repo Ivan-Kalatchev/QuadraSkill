@@ -93,6 +93,22 @@
                         <b-button variant="primary" v-on:click="ready()">Submit</b-button>
                     </b-col>
                 </b-row>
+                <b-row v-show="isInGame" class="justify-content-center mt-5">
+                    <b-col class="d-flex justify-content-center">
+                        <b-card bg-variant="Light" header="Chat" style="width: 100%">
+                            <b-card-text v-for="chat in chats">{{chat.sender}}:{{chat.mes}}</b-card-text>
+                            <template v-slot:footer>
+                                <b-input-group prepend="Message">
+                                    <b-form-input v-model="mes"></b-form-input>
+                                    <b-input-group-append>
+                                        <b-button variant="outline-success" v-on:click="send()">Send
+                                        </b-button>
+                                    </b-input-group-append>
+                                </b-input-group>
+                            </template>
+                        </b-card>
+                    </b-col>
+                </b-row>
             </b-col>
         </b-row>
     </b-container>
@@ -107,18 +123,20 @@
                 socket: null,
                 isSearching: false,
                 d: null,
+                chats: [],
                 x1: null,
                 x2: null,
+                mes: null,
                 currGame: null,
                 players: null,
                 isInGame: false,
             },
             methods: {
                 vam: function (params) {
-                    if (this.ime != null && this.ime != ''){
+                    if (this.ime != null && this.ime != '') {
                         this.isSearching = true;
                         this.socket.emit('vam', this.ime);
-                    }else {
+                    } else {
                         app.$bvToast.toast(`Please write your username to start matchmaking`, {
                             title: `Warning`,
                             variant: 'danger',
@@ -127,66 +145,80 @@
                     }
                 }, ready: function (params) {
                     this.socket.emit('ans', { "d": app.d, "x1": app.x1, "x2": app.x2 });
+                }, send: function (params) {
+                    if (this.mes != null && this.mes != '') {
+                        this.socket.emit('chat', this.mes);
+                        this.mes = null;
+                    } else {
+                        app.$bvToast.toast(`Please write a message to sent`, {
+                            title: `Warning`,
+                            variant: 'warning',
+                            solid: true
+                        })
+                    }
                 }
             }, mounted() {
-            this.socket = io();
-            this.socket.on('vam', function (msg) {
-                if (((msg) ? ((msg.msg) ? msg.msg == "found" : false) : false) && app.isSearching) {
-                    app.isSearching = false;
-                    app.isInGame = true;
-                    app.currGame = msg.currGame;
-                    app.players = msg.lookingForGame;
-                    console.log("start game");
-                }
-                else if (msg == "stop") {
-                    app.isInGame = false;
-                    console.log("stop");
-                } else if (msg) {
-                    app.currGame = msg;
-                }
-            });
-            this.socket.on('ans', function (per) {
-                this.isInGame = false;
-                console.log(`Game has ended! ${per} has found the answer`);
-                app.$bvToast.toast(`Game has ended! ${per} found the answer`, {
-                    title: `Warning`,
-                    variant: 'success',
-                    solid: true
-                })
-            });
-            this.socket.on('error', function (per) {
-                console.log(`Not right`);
-                app.$bvToast.toast(`This isn't the right answer`, {
-                    title: `Warning`,
-                    variant: 'danger',
-                    solid: true
-                })
-            });
-            this.socket.on('left', function (per) {
-                console.log(`${per} left`);
-                app.players = app.players.filter(player => player.name != per);
-                app.$bvToast.toast(`${per} left`, {
-                    title: `Warning`,
-                    variant: 'danger',
-                    solid: true
-                })
-            });
-            this.socket.on('join', function (per) {
-                console.log(`${per.name} joined`);
-                if (per.name == app.ime) {
-                    app.isInGame = true;
-                    app.isSearching = false;
-                    app.players = per.lookingForGame
-                } else {
-                    app.$bvToast.toast(`${per.name} joined`, {
+                this.socket = io();
+                this.socket.on('vam', function (msg) {
+                    if (((msg) ? ((msg.msg) ? msg.msg == "found" : false) : false) && app.isSearching) {
+                        app.isSearching = false;
+                        app.isInGame = true;
+                        app.currGame = msg.currGame;
+                        app.players = msg.lookingForGame;
+                        console.log("start game");
+                    }
+                    else if (msg == "stop") {
+                        app.isInGame = false;
+                        console.log("stop");
+                    } else if (msg) {
+                        app.currGame = msg;
+                    }
+                });
+                this.socket.on('ans', function (per) {
+                    this.isInGame = false;
+                    console.log(`Game has ended! ${per} has found the answer`);
+                    app.$bvToast.toast(`Game has ended! ${per} found the answer`, {
                         title: `Warning`,
                         variant: 'success',
                         solid: true
                     })
-                    app.players.push(per);
-                }
-            });
-        },
+                });
+                this.socket.on('chat', function (mes) {
+                    app.chats.push({sender: mes.sender, mes: mes.mes});
+                });
+                this.socket.on('error', function (per) {
+                    console.log(`Not right`);
+                    app.$bvToast.toast(`This isn't the right answer`, {
+                        title: `Warning`,
+                        variant: 'danger',
+                        solid: true
+                    })
+                });
+                this.socket.on('left', function (per) {
+                    console.log(`${per} left`);
+                    app.players = app.players.filter(player => player.name != per);
+                    app.$bvToast.toast(`${per} left`, {
+                        title: `Warning`,
+                        variant: 'danger',
+                        solid: true
+                    })
+                });
+                this.socket.on('join', function (per) {
+                    console.log(`${per.name} joined`);
+                    if (per.name == app.ime) {
+                        app.isInGame = true;
+                        app.isSearching = false;
+                        app.players = per.lookingForGame
+                    } else {
+                        app.$bvToast.toast(`${per.name} joined`, {
+                            title: `Warning`,
+                            variant: 'success',
+                            solid: true
+                        })
+                        app.players.push(per);
+                    }
+                });
+            },
         })
     </script>
 </body>
