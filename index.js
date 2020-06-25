@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
                         "c": c,
                         "x1": x1,
                         "x2": x2,
-                        "d": Math.sqrt(Math.pow(b, 2) - (4 * a * c))
+                        "d": Math.pow(b, 2) - (4 * a * c)
                     }
                 }
             }
