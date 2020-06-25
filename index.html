@@ -115,8 +115,8 @@
             },
             methods: {
                 vam: function (params) {
-                    this.isSearching = true;
                     if (this.ime != null && this.ime != ''){
+                        this.isSearching = true;
                         this.socket.emit('vam', this.ime);
                     }else {
                         app.$bvToast.toast(`Please write your username to start matchmaking`, {
