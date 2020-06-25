@@ -43,6 +43,8 @@ io.on('connection', (socket) => {
                 currGame = null;
                 lookingForGame = [];
             }
+        } else {
+            lookingForGame = lookingForGame.filter(user => user.id != socket.client.id);
         }
 
     });
@@ -85,8 +87,10 @@ io.on('connection', (socket) => {
                 lookingForGame
             });
         } else if (isInGame) {
-            io.emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame });
-            io.emit("vam", currGame);
+            lookingForGame.forEach(element => {
+                io.to(element.id).emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame });
+                io.to(element.id).emit("vam", currGame);
+            });
         }
         //io.emit('chat message', msg);
     });
