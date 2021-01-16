@@ -44,6 +44,13 @@ SOFTWARE.
 
     <!-- Load the following for BootstrapVueIcons support -->
     <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+
+    <style type="css">
+        .row [class*='col-'] {
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -63,7 +70,7 @@ SOFTWARE.
                     <b-icon icon="search" animation="fade" font-scale="1"></b-icon> VAM Searching for players
                 </b-alert>
                 <b-input-group prepend="Username" class="mt-3">
-                    <b-form-input :disabled="isSearching" v-model="ime"></b-form-input>
+                    <b-form-input :disabled="isSearching" v-model="currUsernamePlayer"></b-form-input>
                     <b-input-group-append>
                         <b-button variant="outline-success" :disabled="isSearching" v-on:click="vam()">Find
                         </b-button>
@@ -72,15 +79,15 @@ SOFTWARE.
             </b-col>
         </b-row>
         <b-row>
-            <b-col cols="3">
+            <b-col sm="12" xs="12" md="3" lg="3" xl="3">
                 <b-col cols="12" v-show="isInGame" class="mt-3">
                     <b-list-group>
-                        <b-list-group-item v-for="player in players" :active="player.name == ime">{{player.name}}
+                        <b-list-group-item v-for="player in players" :active="player.id == currId">{{player.name}}
                         </b-list-group-item>
                     </b-list-group>
                 </b-col>
             </b-col>
-            <b-col cols="9">
+            <b-col sm="12" xs="12" md="9" lg="9" xl="9">
                 <b-row class="mt-3">
                     <b-col cols="12" v-show="isInGame" class="mt-3">
                         <b-alert show class="text-center">
@@ -88,7 +95,7 @@ SOFTWARE.
                             {{(players) ? players.length : 0}} people
                         </b-alert>
                         <b-alert show class="text-center">
-                            <b-icon icon="alt" animation="throb" font-scale="1"></b-icon>
+                            <b-icon icon="alt" font-scale="1"></b-icon>
                             {{(currGame) ? currGame.a : ''}}x^2
                             {{(currGame) ? ((currGame.b >= 0) ? "+" + currGame.b : currGame.b) : ''}}x
                             {{(currGame) ? ((currGame.c >= 0) ? "+" + currGame.c : currGame.c) : ''}}
@@ -118,21 +125,51 @@ SOFTWARE.
                         <b-button variant="primary" v-on:click="ready()">Submit</b-button>
                     </b-col>
                 </b-row>
+
+                <!-- Chat -->
+
                 <b-row v-show="isInGame" class="justify-content-center mt-5">
+
                     <b-col class="d-flex justify-content-center">
-                        <b-card bg-variant="Light" header="Chat" style="width: 100%">
-                            <b-card-text v-for="chat in chats">{{chat.sender}}:{{chat.mes}}</b-card-text>
+
+                        <b-card class="p-0" bg-variant="Light" header="Chat" style="width: 100%; height: 25rem;"
+                            style="scroll-behavior: auto; padding: 0;">
+
+                            <b-card-text style="max-height: 16rem; overflow: auto; scroll-behavior: auto;">
+
+                                <div v-for="chat in chats" :class="(chat.senderId == currId) ? 'text-right' : ''"
+                                    class="pr-3">
+
+                                    <!-- Sender -->
+
+                                    <span class="badge bg-primary" style="color: white;">{{chat.sender}}</span>
+                                    <br />
+                                    <!-- Message -->
+                                    {{chat.mes}}
+
+                                </div>
+
+                            </b-card-text>
+
+
                             <template v-slot:footer>
+
                                 <b-input-group prepend="Message">
+
                                     <b-form-input v-model="mes"></b-form-input>
                                     <b-input-group-append>
                                         <b-button variant="outline-success" v-on:click="send()">Send
                                         </b-button>
                                     </b-input-group-append>
+
                                 </b-input-group>
+
                             </template>
+
                         </b-card>
+
                     </b-col>
+
                 </b-row>
             </b-col>
         </b-row>
@@ -144,7 +181,8 @@ SOFTWARE.
         var app = new Vue({
             el: '#app',
             data: {
-                ime: null,
+                currUsernamePlayer: null,
+                currId: null,
                 socket: null,
                 isSearching: false,
                 d: null,
@@ -157,90 +195,189 @@ SOFTWARE.
                 isInGame: false,
             },
             methods: {
+
+                // Search for players
+
                 vam: function (params) {
-                    if (this.ime != null && this.ime != '') {
+
+                    if (this.currUsernamePlayer != null && this.currUsernamePlayer != '') {
+
+                        //Disable form
                         this.isSearching = true;
-                        this.socket.emit('vam', this.ime);
+
+                        //Contact server
+                        this.socket.emit('vam', this.currUsernamePlayer);
+
+                        //Clear Chats
+                        this.chats = [];
+
                     } else {
+
+                        //Error and toast
                         app.$bvToast.toast(`Please write your username to start matchmaking`, {
                             title: `Warning`,
                             variant: 'danger',
                             solid: true
                         })
+
                     }
-                }, ready: function (params) {
+                },
+
+                // Handle waiting for game
+
+                ready: function (params) {
+
+                    //Ask server for info about answer
                     this.socket.emit('ans', { "d": app.d, "x1": app.x1, "x2": app.x2 });
-                }, send: function (params) {
+
+                },
+
+                // HAndle chat
+
+                send: function (params) {
+
                     if (this.mes != null && this.mes != '') {
+
                         this.socket.emit('chat', this.mes);
                         this.mes = null;
+
                     } else {
+
+                        // Fire a toast
+
                         app.$bvToast.toast(`Please write a message to sent`, {
                             title: `Warning`,
                             variant: 'warning',
                             solid: true
-                        })
+                        });
+
                     }
                 }
-            }, mounted() {
+            },
+
+            // On page load
+
+            mounted() {
+
+                //Create socket
+
                 this.socket = io();
+
+                //Handle vam
+
                 this.socket.on('vam', function (msg) {
+
                     if (((msg) ? ((msg.msg) ? msg.msg == "found" : false) : false) && app.isSearching) {
+
+                        //Found game
                         app.isSearching = false;
                         app.isInGame = true;
                         app.currGame = msg.currGame;
+                        app.currId = msg.playerId;
                         app.players = msg.lookingForGame;
                         console.log("start game");
+
                     }
                     else if (msg == "stop") {
+
+                        //Stop game
+
                         app.isInGame = false;
                         console.log("stop");
+
                     } else if (msg) {
+
                         app.currGame = msg;
+
                     }
                 });
+
+                //Handle answer info-s
+
                 this.socket.on('ans', function (per) {
+
                     this.isInGame = false;
+
                     console.log(`Game has ended! ${per} has found the answer`);
+
                     app.$bvToast.toast(`Game has ended! ${per} found the answer`, {
                         title: `Warning`,
                         variant: 'success',
                         solid: true
                     })
+
+                    this.chats = [];
+
                 });
+
+                // Handle chat
+
                 this.socket.on('chat', function (mes) {
-                    app.chats.push({sender: mes.sender, mes: mes.mes});
+
+                    app.chats.push({ sender: mes.sender, mes: mes.mes, senderId: mes.senderId });
+
                 });
+
+                // Handle wrong answer
                 this.socket.on('error', function (per) {
+
+                    //Debug
                     console.log(`Not right`);
+
+                    // Fire a toast
                     app.$bvToast.toast(`This isn't the right answer`, {
                         title: `Warning`,
                         variant: 'danger',
                         solid: true
                     })
+
                 });
+
+                // Handle players leaving
                 this.socket.on('left', function (per) {
+
+                    // Debug
                     console.log(`${per} left`);
+
+                    // Update players
                     app.players = app.players.filter(player => player.name != per);
+
+                    // Fire a toast
                     app.$bvToast.toast(`${per} left`, {
                         title: `Warning`,
                         variant: 'danger',
                         solid: true
                     })
+
                 });
+
+                // Handle players joining
                 this.socket.on('join', function (per) {
+
+                    //Debug
                     console.log(`${per.name} joined`);
-                    if (per.name == app.ime) {
+
+                    if (per.name == app.currUsernamePlayer) {
+
+                        // Join
+
                         app.isInGame = true;
                         app.isSearching = false;
                         app.players = per.lookingForGame
+
                     } else {
+
+                        // Toast about the join
+
                         app.$bvToast.toast(`${per.name} joined`, {
                             title: `Warning`,
                             variant: 'success',
                             solid: true
                         })
+
+                        // Add player to local storage
                         app.players.push(per);
+
                     }
                 });
             },

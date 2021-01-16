@@ -24,12 +24,16 @@ SOFTWARE.
 
 */
 
+// Imports
+
 var app = require('express')();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var _ = require('lodash');
 const { Random } = require("random-js");
 const random = new Random(); // uses the nativeMath engine
+
+// Variables and essentials
 
 var lookingForGame = [];
 
@@ -39,8 +43,12 @@ var isInGame = false;
 
 var currGame;
 
+//Methods
+
 function containsObject(obj, list) {
+
     var i;
+    
     for (i = 0; i < list.length; i++) {
         if (list[i].id === obj.id) {
             return true;
@@ -48,42 +56,86 @@ function containsObject(obj, list) {
     }
 
     return false;
+
 }
+
+// Index
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', (socket) => {
+
+    //Stat socket
     console.log(`${socket.client.id} connected`);
     console.log(lookingForGame);
+
     socket.broadcast.emit('connected');
+
+    // Handle disconnect
     socket.on('disconnect', () => {
+
+        //Debug
         console.log('user disconnected');
+        
+        // Handle useres leaving
+
         if (isInGame && lookingForGame.filter(user => user.id == socket.client.id)[0]) {
+
+            // Contact players
             io.emit("left", `${lookingForGame.filter(user => user.id == socket.client.id)[0].name}`);
+
+            // Remove user
             lookingForGame = lookingForGame.filter(user => user.id != socket.client.id);
+
+            // The game un-continuable
             if (lookingForGame.length < 2) {
+
+                //Contact players
                 io.emit('vam', "stop");
+
+                // Reset game
+
                 isInGame = false;
                 currGame = null;
                 lookingForGame = [];
+            
             }
+
         } else {
+
+            // Filter users
             lookingForGame = lookingForGame.filter(user => user.id != socket.client.id);
+        
         }
 
     });
+
+    //Handle matchmaking
+
     socket.on('vam', (ime) => {
+
+        //Handle user
         if (containsObject({ "id": socket.client.id, "name": ime }, lookingForGame)) {
+
+            //User already in q
             console.log(`vam already has ${ime} in mind`);
             console.log(lookingForGame)
+        
         } else {
+
+            //Add player to q
             lookingForGame.push({ "id": socket.client.id, "name": ime });
             console.log(lookingForGame)
+
         }
+
+        //Generate quest if players are ready
         if (lookingForGame.length > 1 && !isInGame) {
+
             var quest = null;
+
             while (!quest) {
                 var a = random.integer(-10, 10);
                 var b = random.integer(-10, 10);
@@ -103,53 +155,86 @@ io.on('connection', (socket) => {
                     }
                 }
             }
+
+            //Set variables
             console.log(quest);
             globalQuest = quest;
             currGame = { "a": quest.a, "b": quest.b, "c": globalQuest.c };
             isInGame = true;
-            io.emit('vam', {
-                msg: "found",
-                currGame,
-                lookingForGame
+
+            //Contact users
+            lookingForGame.forEach(element => {
+
+                //Tell user new quest
+                io.to(element.id).emit('vam', {
+                    msg: "found",
+                    currGame,
+                    lookingForGame,
+                    playerId: element.id
+                });
+
             });
+
         } else if (isInGame) {
             lookingForGame.forEach(element => {
+
                 io.to(element.id).emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame });
                 io.to(element.id).emit("vam", currGame);
+
             });
         }
-        //io.emit('chat message', msg);
     });
+
+    // Handle answers
+
     socket.on('ans', (ans) => {
-        //var discr = (b * b) - 4 * (a * c);
-        //var sqrDiscr = Math.sqrt(discr);
+
+        //Check if the required data is here
         if (ans && globalQuest) {
+
+            //Answer correct
             if (ans.d == globalQuest.d && ans.x1 == globalQuest.x1 && ans.x2 == globalQuest.x2 && lookingForGame.length > 1) {
+
+                //Contact users
                 io.emit('ans', lookingForGame.filter(user => user.id == socket.client.id)[0].name);
                 io.emit('vam', "stop");
+
+                //Reset
                 globalQuest = null;
                 isInGame = false;
                 lookingForGame = [];
+
             } else {
+
+                //Tell user that that is not the right answer
                 io.to(socket.client.id).emit('error', "NO")
+
             }
+
         }
 
-        //io.emit('chat message', msg);
     });
+
+    //Handle chat
 
     socket.on('chat', (chat) => {
-        //var discr = (b * b) - 4 * (a * c);
-        //var sqrDiscr = Math.sqrt(discr);
+
         if (isInGame) {
+
+            //Send message to everybody
             lookingForGame.forEach(element => {
-                io.to(element.id).emit('chat', { sender: lookingForGame.filter(user => user.id == socket.client.id)[0].name, mes: chat});
+
+                io.to(element.id).emit('chat', { senderId: lookingForGame.filter(user => user.id == socket.client.id)[0].id, sender: lookingForGame.filter(user => user.id == socket.client.id)[0].name, mes: chat});
+            
             });
+
         }
 
-        //io.emit('chat message', msg);
     });
+
 });
+
+// Start server on port env or 3000
 
 http.listen(process.env.PORT || 3000, () => {
     console.log('listening on *:3000 ');
