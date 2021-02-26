@@ -30,8 +30,11 @@ var app = require('express')();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var _ = require('lodash');
+const path = require('path');
 const { Random } = require("random-js");
 const random = new Random(); // uses the nativeMath engine
+
+path.join(__dirname, '/index.html')
 
 // Variables and essentials
 
@@ -179,7 +182,7 @@ io.on('connection', (socket) => {
             lookingForGame.forEach(element => {
 
                 io.to(element.id).emit("join", { "name": lookingForGame.filter(user => user.id == socket.client.id)[0].name, "id": lookingForGame.filter(user => user.id == socket.client.id)[0].id, "lookingForGame": lookingForGame });
-                io.to(element.id).emit("vam", currGame);
+                io.to(element.id).emit("vam", { currGame, playerId: element.id});
 
             });
         }
