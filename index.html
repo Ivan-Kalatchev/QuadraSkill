@@ -57,9 +57,9 @@ SOFTWARE.
     <b-container class="mt-1" id="app">
         <b-row>
             <b-col>
-                <b-navbar toggleable type="dark" variant="dark">
+                <b-navbar toggleable type="dark" variant="dark" style="border-radius: .3rem;">
                     <b-navbar-brand href="#">
-                        <b-icon icon="alt" font-scale="1"></b-icon> QuadraSkill
+                        <b-icon icon="alt" font-scale="1"></b-icon> КуадраСкил
                     </b-navbar-brand>
                 </b-navbar>
             </b-col>
@@ -67,13 +67,13 @@ SOFTWARE.
         <b-row v-show="!isInGame">
             <b-col class="mt-3">
                 <b-alert :show="isSearching" class="text-center">
-                    <b-icon icon="search" animation="fade" font-scale="1"></b-icon> VAM Searching for players
+                    <b-icon icon="search" animation="fade" font-scale="1"></b-icon> VAM Търси играчи
                 </b-alert>
                 <form v-on:submit.prevent="vam()">
-                    <b-input-group prepend="Username" class="mt-3">
+                    <b-input-group prepend="Псевдоним" class="mt-3">
                         <b-form-input :disabled="isSearching" v-model="currUsernamePlayer"></b-form-input>
                         <b-input-group-append>
-                            <b-button variant="outline-success" :disabled="isSearching" v-on:click="vam()">Find
+                            <b-button variant="outline-success" :disabled="isSearching" v-on:click="vam()">Намери игра
                             </b-button>
                         </b-input-group-append>
                     </b-input-group>
@@ -93,8 +93,8 @@ SOFTWARE.
                 <b-row class="mt-3">
                     <b-col cols="12" v-show="isInGame">
                         <b-alert show class="text-center">
-                            <b-icon icon="controller" animation="fade" font-scale="1"></b-icon> In Game with
-                            {{(players) ? players.length : 0}} people
+                            <b-icon icon="controller" animation="fade" font-scale="1"></b-icon> В игра с
+                            {{(players) ? players.length : 0}}
                         </b-alert>
                         <b-alert show class="text-center">
                             <b-icon icon="alt" font-scale="1"></b-icon>
@@ -124,7 +124,7 @@ SOFTWARE.
                 </b-row>
                 <b-row v-show="isInGame" class="justify-content-center mt-5">
                     <b-col class="d-flex justify-content-center">
-                        <b-button variant="primary" v-on:click="ready()">Submit</b-button>
+                        <b-button variant="primary" v-on:click="ready()">Готов съм</b-button>
                     </b-col>
                 </b-row>
 
@@ -134,7 +134,7 @@ SOFTWARE.
 
                     <b-col class="d-flex justify-content-center">
 
-                        <b-card class="p-0" bg-variant="Light" header="Chat" style="width: 100%; height: 25rem;"
+                        <b-card class="p-0" bg-variant="Light" header="Съобщения" style="width: 100%; height: 25rem;"
                             style="scroll-behavior: auto; padding: 0;">
 
                             <b-card-text style="max-height: 16rem; overflow: auto; scroll-behavior: auto;">
@@ -157,11 +157,11 @@ SOFTWARE.
                             <template v-slot:footer>
 
                                 <form v-on:submit.prevent="send()">
-                                    <b-input-group prepend="Message">
+                                    <b-input-group prepend="Съобщение">
     
                                         <b-form-input v-model="mes"></b-form-input>
                                         <b-input-group-append>
-                                            <b-button variant="outline-success" v-on:click="send()">Send
+                                            <b-button variant="outline-success" v-on:click="send()">Изпрати
                                             </b-button>
                                         </b-input-group-append>
     
