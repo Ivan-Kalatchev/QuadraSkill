@@ -29,12 +29,13 @@ SOFTWARE.
 var app = require('express')();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
-var _ = require('lodash');
+//var _ = require('lodash');
 const path = require('path');
+let ejs = require('ejs');
 const { Random } = require("random-js");
 const random = new Random(); // uses the nativeMath engine
 
-path.join(__dirname, '/newIndex.html')
+path.join(__dirname, '/newIndex.ejs')
 
 // Variables and essentials
 
@@ -79,8 +80,10 @@ Object.defineProperty(Object.prototype, "ToUserReadable", {
 
 // Index
 
+app.set('view engine', 'ejs');
+
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/newIndex.html');
+    res.render(__dirname + '/newIndex.ejs');
 });
 
 io.on('connection', (socket) => {
