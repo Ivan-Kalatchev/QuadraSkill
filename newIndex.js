@@ -31,11 +31,15 @@ var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 //var _ = require('lodash');
 const path = require('path');
+const db = require('./db/db');
 let ejs = require('ejs');
 const { Random } = require("random-js");
 const random = new Random(); // uses the nativeMath engine
 
-path.join(__dirname, '/newIndex.ejs')
+// init db
+(async () => {
+    await db.init();
+})()
 
 // Variables and essentials
 
@@ -72,7 +76,7 @@ function questGen() {
 
 Object.defineProperty(Object.prototype, "ToUserReadable", {
     value: function ToUserReadable() {
-        return { id: this.id, publicInfo: this.publicInfo, players: this.players, isPrivate: this.isPrivate };
+        return { id: this.id, publicInfo: this.publicInfo, chats: this.chats, players: this.players, isPrivate: this.isPrivate };
     },
     writable: true,
     configurable: true
@@ -86,17 +90,31 @@ app.get('/', (req, res) => {
     res.render(__dirname + '/newIndex.ejs');
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
+
+    var top = await db.getTopThree();
 
     //Stat socket
     console.log(`${socket.client.id} connected`);
 
     io.to(socket.client.id).emit("id", socket.client.id)
+    io.to(socket.client.id).emit("top", top)
 
     // Handle disconnect
 
     socket.on('disconnect', () => {
-
+        var currGame = games.filter(game => game.players.filter(p => p.id == socket.client.id).length > 0)[0];
+        if (currGame) {
+            if (currGame.players.length == 1) {
+                games = games.filter(x => x != currGame);
+            } else {
+                var index = games.indexOf(currGame);
+                games[index].players = games[index].players.filter(x => x.id != socket.client.id);
+                games[index].players.forEach(x => {
+                    io.to(x.id).emit("left", socket.client.id);
+                });
+            }
+        }
     });
 
     //Handle matchmaking
@@ -139,6 +157,7 @@ io.on('connection', (socket) => {
             var newGame = {
                 id: random.integer(1000, 9999).toString(),
                 quest: q,
+                start: new Date(),
                 publicInfo: { a: q.a, b: q.b, c: q.c },
                 isPrivate: playerIsPrivate,
                 chats: [],
@@ -163,9 +182,10 @@ io.on('connection', (socket) => {
 
     // Handle answers
 
-    socket.on('ans', (d, x1, x2) => {
+    socket.on('ans', async (d, x1, x2) => {
         var currGame = games.filter(game => game.players.filter(p => p.id == socket.client.id).length > 0)[0];
         if (currGame && x1 == currGame.quest.x1 && x2 == currGame.quest.x2 && d == currGame.quest.d) {
+            await db.registerRecord(currGame.players.filter(y => y.id == socket.client.id)[0].username, (currGame.start.getTime() - new Date().getTime()) / -1000)
             currGame.players.forEach(x => {
                 io.to(x.id).emit("ans", currGame.players.filter(y => y.id == socket.client.id)[0].id);
             });
@@ -186,7 +206,6 @@ io.on('connection', (socket) => {
             });
         }
     });
-
 });
 
 // Start server on port env or 3000
