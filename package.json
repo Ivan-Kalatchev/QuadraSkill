@@ -13,5 +13,8 @@
     },
     "scripts": {
         "start": "node newIndex.js"
+    },
+    "engines": {
+        "node": "14.x"
     }
 }
