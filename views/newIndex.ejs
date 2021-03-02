@@ -1,0 +1,533 @@
+<!--
+  
+MIT License
+
+Copyright (c) 2020 Ivan-Kalatchev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!doctype html>
+<html>
+
+<head>
+    <title>КуадраСкил</title>
+
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+    <!-- Load polyfills to support older browsers -->
+    <script src="//polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver"
+        crossorigin="anonymous"></script>
+
+    <!-- Load Vue followed by BootstrapVue -->
+    <script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+
+    <!-- Load the following for BootstrapVueIcons support -->
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+
+    <style type="css">
+        .row [class*='col-'] {
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+
+</head>
+
+<body style="background-color: rgb(245, 245, 245);">
+    <b-container class="mt-1" id="app">
+        <b-row>
+            <b-col>
+                <b-navbar toggleable type="dark" variant="dark" style="border-radius: .3rem;">
+                    <b-navbar-brand href="#">
+                        <b-icon icon="alt" font-scale="1"></b-icon> КуадраСкил
+                    </b-navbar-brand>
+                </b-navbar>
+            </b-col>
+        </b-row>
+        <b-row v-show="!isInGame">
+            <b-col class="mt-3" :xl="top && top.length != 0 ? '8' : '12'">
+                <div>
+                    <b-card overlay img-src="https://picsum.photos/900/250/?image=3" img-alt="Card Image"
+                        text-variant="white" title="Нови хоризонти!">
+                        <b-card-text>
+                            КуадраСкил вече воддържа повече от една игра едновреммено!
+                        </b-card-text>
+                    </b-card>
+                </div>
+            </b-col>
+            <b-col xl="4" v-show="top && top.length != 0" class="mt-3">
+                <b-card border-variant="success" header="Тримата най-бързи играчи" header-border-variant="success" header-text-variant="success"
+                    align="center">
+                    <b-list-group>
+                        <b-list-group-item v-for="player in (top && top.length != 0) ? top : []" :active="player.username == top[0].username">
+                            <div class="d-flex justify-content-center">
+                                {{player.username}} - {{player.time > 60 ? Math.round(player.time / 60)+ " мин." : Math.round(player.time, 2) + " сек."}}
+                            </div>
+                        </b-list-group-item>
+                    </b-list-group>
+                </b-card>
+            </b-col>
+            <b-col class="mt-3" cols="12">
+                <form v-on:submit.prevent="vam(false, false)">
+                    <b-input-group prepend="Псевдоним" class="mt-3">
+                        <b-form-input :disabled="isSearching" v-model="currUsernamePlayer"></b-form-input>
+                        <!-- <b-input-group-append>
+                            <b-button variant="outline-primary" :disabled="isSearching" v-on:click="vam(false, false)">Намери игра
+                            </b-button>
+                            <b-button variant="outline-primary" :disabled="isSearching" v-on:click="vam(true, false)">Създаи нова игра
+                            </b-button>
+                            <b-button variant="outline-primary" :disabled="isSearching" v-on:click="vam(true, true)">Създаи частна игра
+                            </b-button>
+                        </b-input-group-append> -->
+                    </b-input-group>
+                </form>
+            </b-col>
+            <b-col class="mt-3" xl="4">
+                <div>
+                    <b-card overlay
+                        img-src="https://images.pexels.com/photos/3768236/pexels-photo-3768236.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+                        img-alt="Card Image" text-variant="dark" title="Нормална игра">
+                        <b-card-text>
+                            КуадраСкил поддържа функцията за игране в други публични игри! <br />
+                            ВНИМАНИЕ: Ако публична игра не бъде намерена, ще се създаде нова такава!
+                        </b-card-text>
+                        <b-button v-on:click="vam(false, false)" class="mt-2" variant="primary">Намери игра!</b-button>
+                        <b-button v-on:click="vam(true, false)" class="mt-2" variant="primary">Създай публична игра!
+                        </b-button>
+                    </b-card>
+                </div>
+            </b-col>
+            <b-col class="mt-3" xl="4">
+                <div>
+                    <b-card overlay
+                        img-src="https://images.pexels.com/photos/3989144/pexels-photo-3989144.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+                        img-alt="Card Image" text-variant="white" title="Пресъедини се към приятелите си">
+                        <b-card-text>
+                            КуадраСкил поддържа възможността за присъединяване към специфична, вече започнала игра (като
+                            се използва нейното ИД)!
+                        </b-card-text>
+                        <form v-on:submit.prevent="join()" class="mt-2">
+                            <b-input-group prepend="ИД на игра" class="mt-3">
+                                <b-form-input :disabled="isSearching" v-model="gameCode"></b-form-input>
+                                <b-input-group-append>
+                                    <b-button variant="primary" :disabled="isSearching" v-on:click="join()">Присъедини
+                                        се
+                                    </b-button>
+                                </b-input-group-append>
+                            </b-input-group>
+                        </form>
+                    </b-card>
+                </div>
+            </b-col>
+            <b-col class="mt-3" xl="4">
+                <div>
+                    <b-card overlay
+                        img-src="https://images.pexels.com/photos/1054397/pexels-photo-1054397.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+                        img-alt="Card Image" text-variant="white" title="Създай частна игра!">
+                        <b-card-text>
+                            КуадраСкил вече воддържа частни игри!
+                        </b-card-text>
+                        <b-button class="mt-2" v-on:click="vam(true, true)" variant="primary">Създаи частна игра сега!
+                        </b-button>
+                    </b-card>
+                </div>
+            </b-col>
+            <!-- <b-col class="mt-3" xl="4">
+                <form v-on:submit.prevent="join()">
+                    <b-input-group prepend="ИД на игра" class="mt-3">
+                        <b-form-input :disabled="isSearching" v-model="gameCode"></b-form-input>
+                        <b-input-group-append>
+                            <b-button variant="outline-primary" :disabled="isSearching" v-on:click="join()">Присъедини се
+                            </b-button>
+                        </b-input-group-append>
+                    </b-input-group>
+                </form>
+            </b-col> -->
+            <b-col class="mt-3" cols="12">
+                <b-card bg-variant="dark" text-variant="white" title="Какво е КуадраСкил">
+                    <b-card-text>
+                        КуадраСкил е игра която цели да направи решаването на квадратни уравнения приятно, забавно и
+                        съзтезателно
+                    </b-card-text>
+                    <b-button href="https://www.matematika.bg/algebra/quadratic-equation.html" variant="primary">Как се
+                        решават квадратни уравнения?</b-button>
+                </b-card>
+            </b-col>
+        </b-row>
+        <b-row>
+            <b-col sm="12" xs="12" md="3" lg="3" xl="3">
+                <b-col cols="12" v-show="isInGame" class="mt-3">
+                    <b-card border-variant="primary" header="Текуща игра" header-border-variant="primary" header-text-variant="primary"
+                        align="center">
+                        <b-list-group>
+                            <b-list-group-item v-for="player in (currGame) ? currGame.players : []" :active="player.id == currId">
+                                <div class="d-flex justify-content-center">
+                                    <b-avatar></b-avatar>
+                                </div>
+                                <div class="d-flex justify-content-center mt-2">
+                                    {{player.username}}
+                                </div>
+                            </b-list-group-item>
+                        </b-list-group>
+                    </b-card>
+                </b-col>
+                <b-col cols="12" v-show="isInGame" class="mt-3">
+                    <b-card overlay
+                        img-src="https://images.pexels.com/photos/6147178/pexels-photo-6147178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                        img-alt="Card Image" text-variant="dark" title="Покани приятел!">
+                        <b-input-group prepend="ИД на игра" class="mt-3">
+                            <b-form-input :value="(currGame) ? currGame.id : 0" readonly></b-form-input>
+                        </b-input-group>
+                    </b-card>
+                </b-col>
+                <b-col cols="12" v-show="isInGame" class="mt-3">
+                    <b-card border-variant="danger" header="Опасна зона" header-border-variant="danger" header-text-variant="danger"
+                        align="center">
+                        <b-button variant="outline-danger" block href="/">Излез</b-button>
+                    </b-card>
+                </b-col>
+            </b-col>
+            <b-col sm="12" xs="12" md="9" lg="9" xl="9">
+                <b-row class="mt-3">
+                    <b-col cols="12" v-show="isInGame">
+                        <b-alert v-sjow="(currGame) ? currGame.players.length > 1 : false" show class="text-center">
+                            <b-icon icon="controller" animation="fade" font-scale="1"></b-icon> В игра с
+                            {{(currGame) ? currGame.players.length + "-ма" : 0}}
+                        </b-alert>
+                        <b-alert show class="text-center">
+                            <b-icon icon="alt" font-scale="1"></b-icon>
+                            {{(currGame) ? currGame.publicInfo.a : ''}}x^2
+                            {{(currGame) ? ((currGame.publicInfo.b >= 0) ? "+" + currGame.publicInfo.b :
+                            currGame.publicInfo.b) : ''}}x
+                            {{(currGame) ? ((currGame.publicInfo.c >= 0) ? "+" + currGame.publicInfo.c :
+                            currGame.publicInfo.c) : ''}}
+                            = 0
+                        </b-alert>
+                    </b-col>
+                </b-row>
+                <b-row v-show="isInGame">
+                    <b-col>
+                        <b-input-group prepend="D" class="mt-3">
+                            <b-form-input v-model="d"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                    <b-col>
+                        <b-input-group prepend="x1" class="mt-3">
+                            <b-form-input v-model="x1"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                    <b-col>
+                        <b-input-group prepend="x2" class="mt-3">
+                            <b-form-input v-model="x2"></b-form-input>
+                        </b-input-group>
+                    </b-col>
+                </b-row>
+                <b-row v-show="isInGame" class="justify-content-center mt-5">
+                    <b-col class="d-flex justify-content-center">
+                        <b-button variant="primary" v-on:click="ready()">Готов съм</b-button>
+                    </b-col>
+                </b-row>
+
+                <!-- Chat -->
+
+                <b-row v-show="isInGame" class="justify-content-center mt-5">
+
+                    <b-col class="d-flex justify-content-center">
+
+                        <b-card class="p-0" bg-variant="Light" header="Съобщения" style="width: 100%; height: 25rem;"
+                            style="scroll-behavior: auto; padding: 0;">
+
+                            <b-card-text style="max-height: 16rem; overflow: auto; scroll-behavior: auto;" :key="fakeKey">
+
+                                <div v-for="chat in (currGame) ? currGame.chats : []"
+                                    :class="(chat.sender.id == currId) ? 'text-right' : ''" class="pr-3">
+
+                                    <!-- Sender -->
+
+                                    <span class="badge bg-primary" style="color: white;">{{chat.sender.username}}</span>
+                                    <br />
+                                    <!-- Message -->
+                                    {{chat.text}}
+
+                                </div>
+
+                            </b-card-text>
+
+
+                            <template v-slot:footer>
+
+                                <form v-on:submit.prevent="send()">
+                                    <b-input-group prepend="Съобщение">
+
+                                        <b-form-input v-model="mes"></b-form-input>
+                                        <b-input-group-append>
+                                            <b-button variant="outline-success" v-on:click="send()">Изпрати
+                                            </b-button>
+                                        </b-input-group-append>
+
+                                    </b-input-group>
+                                </form>
+
+                            </template>
+
+                        </b-card>
+
+                    </b-col>
+
+                </b-row>
+            </b-col>
+        </b-row>
+    </b-container>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                currUsernamePlayer: null,
+                currId: null,
+                socket: null,
+                isSearching: false,
+                d: null,
+                x1: null,
+                x2: null,
+                gameCode: null,
+                fakeKey: 0,
+                mes: null,
+                currGame: null,
+                top: null,
+                isInGame: false,
+                lastMessageSent: new Date(),
+            },
+            methods: {
+
+                // Search for players
+
+                vam: function (isNew, isPrivate) {
+
+                    if (this.currUsernamePlayer != null && this.currUsernamePlayer != '') {
+
+                        //Disable form
+                        this.isSearching = true;
+
+                        //Contact server
+                        this.socket.emit('vam', this.currUsernamePlayer, isNew, isPrivate);
+
+                        //Clear Data
+                        this.x1 = "";
+                        this.x2 = "";
+                        this.d = "";
+
+                    } else {
+
+                        //Error and toast
+                        app.$bvToast.toast(`Моля въведете псевдоним!`, {
+                            title: `Грешка!`,
+                            variant: 'danger',
+                            solid: true
+                        })
+
+                    }
+                },
+
+                // Handle join
+
+                join: function () {
+
+                    if (this.gameCode != null && this.gameCode != '' && this.currUsernamePlayer != null && this.currUsernamePlayer != '') {
+
+                        //Disable form
+                        this.isSearching = true;
+
+                        //Contact server
+                        this.socket.emit('vamJoin', this.currUsernamePlayer, this.gameCode);
+
+                        //Clear Data
+                        this.x1 = "";
+                        this.x2 = "";
+                        this.d = "";
+
+                    } else {
+
+                        //Error and toast
+                        app.$bvToast.toast(`Недостатъчни данни!`, {
+                            title: `Warning`,
+                            variant: 'danger',
+                            solid: true
+                        })
+
+                    }
+
+                },
+
+                // Handle waiting for game
+
+                ready: function (params) {
+
+                    //Ask server for info about answer
+                    this.socket.emit('ans', app.d, app.x1, app.x2);
+
+                },
+
+                // Handle chat
+
+                send: function (params) {
+
+                    if (this.mes != null && this.mes != '' && (((this.lastMessageSent.getTime() - new Date().getTime()) / 1000) * - 1) > 5) {
+
+                        this.socket.emit('chat', this.mes);
+                        this.mes = null;
+                        this.lastMessageSent = new Date();
+
+                    } else if (this.mes == null || this.mes == '') {
+
+                        // Fire a toast
+
+                        app.$bvToast.toast(`Моля напишете своето съобщение!`, {
+                            title: `Внимание!`,
+                            variant: 'warning',
+                            solid: true
+                        });
+
+                    } else {
+
+                        // Fire a toast
+
+                        app.$bvToast.toast(`Моля изчакайте ${Math.round((5 - (((this.lastMessageSent.getTime() - new Date().getTime()) / 1000) * -1)), 2)} секунди преди да изпратите друго съобщение!`, {
+                            title: `Внимание!`,
+                            variant: 'warning',
+                            solid: true
+                        });
+
+                    }
+                }
+            },
+
+            // On page load
+
+            mounted() {
+
+                //Create socket
+
+                this.socket = io();
+
+                //Handle vam
+
+                this.socket.on('vam', function (msg) {
+
+                    app.isSearching = false;
+                    app.isInGame = true;
+                    app.currGame = msg
+
+                });
+
+                //Handle answer info-s
+
+                this.socket.on('ans', function (per) {
+
+                    app.isInGame = false;
+
+                    if (per == app.currId) return;
+                    var user = app.currGame.players.filter(x => x.id == per)[0];
+                    console.log(`Играта свърши! ${user.username} намери отогвора!`);
+
+                    app.$bvToast.toast(`Играта свърши! ${user.username} намери отогвора! `, {
+                        title: `Играта свърши!`,
+                        variant: 'success',
+                        solid: true
+                    })
+
+                });
+
+                // Handle id
+
+                this.socket.on('id', function (id) {
+
+                    app.currId = id;
+
+                });
+
+                // Handle top three
+
+                this.socket.on('top', function (top) {
+
+                    app.top = top;
+
+                });
+
+                // Handle chat
+
+                this.socket.on('chat', function (ch) {
+                    app.currGame.chats= ch;
+                    app.fakeKey += 1;
+                });
+
+                // Handle wrong answer
+                this.socket.on('error', function (id) {
+                    switch (id) {
+                        case 1:
+                            app.$bvToast.toast(`Не съществува такава игра!`, {
+                                title: `Грешка!`,
+                                variant: 'danger',
+                                solid: true
+                            });
+                            app.isSearching = false;
+                            break;
+                    }
+                });
+
+                // Handle players leaving
+                this.socket.on('left', function (per) {
+                    var pl = app.currGame.players.filter(x => x.id == per)[0];
+                    // Toast about the join
+
+                    app.$bvToast.toast(`${pl.username} се отдели!`, {
+                        title: `Ехо!`,
+                        variant: 'success',
+                        solid: true
+                    })
+
+                    // Add player to local storage
+                    app.currGame.players = app.currGame.players.filter(x => x.id != per);
+                });
+
+                // Handle players joining
+                this.socket.on('join', function (per) {
+                    // Toast about the join
+
+                    app.$bvToast.toast(`${per.username} се присъедини!`, {
+                        title: `Ехо!`,
+                        variant: 'success',
+                        solid: true
+                    })
+
+                    // Add player to local storage
+                    app.currGame.players.push(per);
+                });
+            },
+        })
+    </script>
+</body>
+
+</html>

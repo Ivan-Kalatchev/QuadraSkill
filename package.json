@@ -16,5 +16,11 @@
     },
     "engines": {
         "node": "14.x"
+    },
+    "pkg": {
+        "scripts": "*.js",
+        "assets": "*.html"
+    },"bin": {
+        "quadraskill": "./newIndex.js"
     }
 }

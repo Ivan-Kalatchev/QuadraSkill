@@ -87,7 +87,7 @@ Object.defineProperty(Object.prototype, "ToUserReadable", {
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.render(__dirname + '/newIndex.ejs');
+    res.render('newIndex');
 });
 
 io.on('connection', async (socket) => {
