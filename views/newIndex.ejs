@@ -45,6 +45,8 @@ SOFTWARE.
     <!-- Load the following for BootstrapVueIcons support -->
     <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
 
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style type="css">
         .row [class*='col-'] {
             transition: all 0.5s ease-in-out;
@@ -76,12 +78,14 @@ SOFTWARE.
                 </div>
             </b-col>
             <b-col xl="4" v-show="top && top.length != 0" class="mt-3">
-                <b-card border-variant="success" header="Тримата най-бързи играчи" header-border-variant="success" header-text-variant="success"
-                    align="center">
+                <b-card border-variant="success" header="Тримата най-бързи играчи" header-border-variant="success"
+                    header-text-variant="success" align="center">
                     <b-list-group>
-                        <b-list-group-item v-for="player in (top && top.length != 0) ? top : []" :active="player.username == top[0].username">
+                        <b-list-group-item v-for="player in (top && top.length != 0) ? top : []"
+                            :active="player.username == top[0].username">
                             <div class="d-flex justify-content-center">
-                                {{player.username}} - {{player.time > 60 ? Math.round(player.time / 60)+ " мин." : Math.round(player.time, 2) + " сек."}}
+                                {{player.username}} - {{player.time > 60 ? Math.round(player.time / 60)+ " мин." :
+                                Math.round(player.time, 2) + " сек."}}
                             </div>
                         </b-list-group-item>
                     </b-list-group>
@@ -177,10 +181,11 @@ SOFTWARE.
         <b-row>
             <b-col sm="12" xs="12" md="3" lg="3" xl="3">
                 <b-col cols="12" v-show="isInGame" class="mt-3">
-                    <b-card border-variant="primary" header="Текуща игра" header-border-variant="primary" header-text-variant="primary"
-                        align="center">
+                    <b-card border-variant="primary" header="Текуща игра" header-border-variant="primary"
+                        header-text-variant="primary" align="center">
                         <b-list-group>
-                            <b-list-group-item v-for="player in (currGame) ? currGame.players : []" :active="player.id == currId">
+                            <b-list-group-item v-for="player in (currGame) ? currGame.players : []"
+                                :active="player.id == currId">
                                 <div class="d-flex justify-content-center">
                                     <b-avatar></b-avatar>
                                 </div>
@@ -201,8 +206,8 @@ SOFTWARE.
                     </b-card>
                 </b-col>
                 <b-col cols="12" v-show="isInGame" class="mt-3">
-                    <b-card border-variant="danger" header="Опасна зона" header-border-variant="danger" header-text-variant="danger"
-                        align="center">
+                    <b-card border-variant="danger" header="Опасна зона" header-border-variant="danger"
+                        header-text-variant="danger" align="center">
                         <b-button variant="outline-danger" block href="/">Излез</b-button>
                     </b-card>
                 </b-col>
@@ -257,7 +262,8 @@ SOFTWARE.
                         <b-card class="p-0" bg-variant="Light" header="Съобщения" style="width: 100%; height: 25rem;"
                             style="scroll-behavior: auto; padding: 0;">
 
-                            <b-card-text style="max-height: 16rem; overflow: auto; scroll-behavior: auto;" :key="fakeKey">
+                            <b-card-text style="max-height: 16rem; overflow: auto; scroll-behavior: auto;"
+                                :key="fakeKey">
 
                                 <div v-for="chat in (currGame) ? currGame.chats : []"
                                     :class="(chat.sender.id == currId) ? 'text-right' : ''" class="pr-3">
@@ -342,10 +348,17 @@ SOFTWARE.
                     } else {
 
                         //Error and toast
-                        app.$bvToast.toast(`Моля въведете псевдоним!`, {
-                            title: `Грешка!`,
-                            variant: 'danger',
-                            solid: true
+                        // app.$bvToast.toast(`Моля въведете псевдоним!`, {
+                        //     title: `Грешка!`,
+                        //     variant: 'danger',
+                        //     solid: true
+                        // })
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Моля въведете псевдоним!',
+                            showConfirmButton: false,
+                            timer: 1500
                         })
 
                     }
@@ -371,10 +384,17 @@ SOFTWARE.
                     } else {
 
                         //Error and toast
-                        app.$bvToast.toast(`Недостатъчни данни!`, {
-                            title: `Warning`,
-                            variant: 'danger',
-                            solid: true
+                        // app.$bvToast.toast(``, {
+                        //     title: `Warning`,
+                        //     variant: 'danger',
+                        //     solid: true
+                        // })
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Недостатъчни данни!',
+                            showConfirmButton: false,
+                            timer: 1500
                         })
 
                     }
@@ -404,21 +424,35 @@ SOFTWARE.
 
                         // Fire a toast
 
-                        app.$bvToast.toast(`Моля напишете своето съобщение!`, {
-                            title: `Внимание!`,
-                            variant: 'warning',
-                            solid: true
-                        });
+                        // app.$bvToast.toast(`Моля напишете своето съобщение!`, {
+                        //     title: `Внимание!`,
+                        //     variant: 'warning',
+                        //     solid: true
+                        // });
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Моля напишете своето съобщение!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        })
 
                     } else {
 
                         // Fire a toast
 
-                        app.$bvToast.toast(`Моля изчакайте ${Math.round((5 - (((this.lastMessageSent.getTime() - new Date().getTime()) / 1000) * -1)), 2)} секунди преди да изпратите друго съобщение!`, {
-                            title: `Внимание!`,
-                            variant: 'warning',
-                            solid: true
-                        });
+                        // app.$bvToast.toast(`Моля изчакайте ${Math.round((5 - (((this.lastMessageSent.getTime() - new Date().getTime()) / 1000) * -1)), 2)} секунди преди да изпратите друго съобщение!`, {
+                        //     title: `Внимание!`,
+                        //     variant: 'warning',
+                        //     solid: true
+                        // });
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: `Моля изчакайте ${Math.round((5 - (((this.lastMessageSent.getTime() - new Date().getTime()) / 1000) * -1)), 2)} секунди преди да изпратите друго съобщение!`,
+                            showConfirmButton: false,
+                            timer: 1500
+                        })
 
                     }
                 }
@@ -452,10 +486,17 @@ SOFTWARE.
                     var user = app.currGame.players.filter(x => x.id == per)[0];
                     console.log(`Играта свърши! ${user.username} намери отогвора!`);
 
-                    app.$bvToast.toast(`Играта свърши! ${user.username} намери отогвора! `, {
-                        title: `Играта свърши!`,
-                        variant: 'success',
-                        solid: true
+                    // app.$bvToast.toast(, {
+                    //     title: `Играта свърши!`,
+                    //     variant: 'success',
+                    //     solid: true
+                    // })
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: `Играта свърши! ${user.username} намери отогвора! `,
+                        showConfirmButton: false,
+                        timer: 1500
                     })
 
                 });
@@ -479,7 +520,7 @@ SOFTWARE.
                 // Handle chat
 
                 this.socket.on('chat', function (ch) {
-                    app.currGame.chats= ch;
+                    app.currGame.chats = ch;
                     app.fakeKey += 1;
                 });
 
@@ -487,11 +528,17 @@ SOFTWARE.
                 this.socket.on('error', function (id) {
                     switch (id) {
                         case 1:
-                            app.$bvToast.toast(`Не съществува такава игра!`, {
-                                title: `Грешка!`,
-                                variant: 'danger',
-                                solid: true
-                            });
+                            // app.$bvToast.toast(`Не съществува такава игра!`, {
+                            //     title: `Грешка!`,
+                            //     variant: 'danger',
+                            //     solid: true
+                            // });
+                            Swal.fire({
+                                icon: 'error',
+                                title: `Не съществува такава игра!`,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
                             app.isSearching = false;
                             break;
                     }
@@ -502,10 +549,16 @@ SOFTWARE.
                     var pl = app.currGame.players.filter(x => x.id == per)[0];
                     // Toast about the join
 
-                    app.$bvToast.toast(`${pl.username} се отдели!`, {
-                        title: `Ехо!`,
-                        variant: 'success',
-                        solid: true
+                    // app.$bvToast.toast(`${pl.username} се отдели!`, {
+                    //     title: `Ехо!`,
+                    //     variant: 'success',
+                    //     solid: true
+                    // })
+                    Swal.fire({
+                        icon: 'success',
+                        title: `${pl.username} се отдели!`,
+                        showConfirmButton: false,
+                        timer: 1500
                     })
 
                     // Add player to local storage
@@ -516,10 +569,17 @@ SOFTWARE.
                 this.socket.on('join', function (per) {
                     // Toast about the join
 
-                    app.$bvToast.toast(`${per.username} се присъедини!`, {
-                        title: `Ехо!`,
-                        variant: 'success',
-                        solid: true
+                    // app.$bvToast.toast(`${per.username} се присъедини!`, {
+                    //     title: `Ехо!`,
+                    //     variant: 'success',
+                    //     solid: true
+                    // })
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: `${per.username} се присъедини!`,
+                        showConfirmButton: false,
+                        timer: 1500
                     })
 
                     // Add player to local storage

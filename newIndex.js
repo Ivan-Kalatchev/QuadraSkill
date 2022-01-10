@@ -184,7 +184,7 @@ io.on('connection', async (socket) => {
 
     socket.on('ans', async (d, x1, x2) => {
         var currGame = games.filter(game => game.players.filter(p => p.id == socket.client.id).length > 0)[0];
-        if (currGame && x1 == currGame.quest.x1 && x2 == currGame.quest.x2 && d == currGame.quest.d) {
+        if (currGame && ((x1 == currGame.quest.x1 && x2 == currGame.quest.x2) || (x2 == currGame.quest.x1 && x1 == currGame.quest.x2) ) && d == currGame.quest.d) {
             await db.registerRecord(currGame.players.filter(y => y.id == socket.client.id)[0].username, (currGame.start.getTime() - new Date().getTime()) / -1000)
             currGame.players.forEach(x => {
                 io.to(x.id).emit("ans", currGame.players.filter(y => y.id == socket.client.id)[0].id);

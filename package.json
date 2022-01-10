@@ -20,7 +20,8 @@
     "pkg": {
         "scripts": "*.js",
         "assets": "*.html"
-    },"bin": {
+    },
+    "bin": {
         "quadraskill": "./newIndex.js"
     }
 }
