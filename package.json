@@ -8,7 +8,7 @@
         "lodash": "^4.17.19",
         "random-js": "^2.1.0",
         "sequelize": "^6.5.0",
-        "socket.io": "^2.3.0",
+        "socket.io": "^2.5.0",
         "sqlite3": "^5.0.2"
     },
     "scripts": {
